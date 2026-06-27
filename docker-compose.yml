@@ -1,0 +1,15 @@
+services:
+  bot:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - UV_PROJECT_ENVIRONMENT=/opt/venv
+  test:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - UV_PROJECT_ENVIRONMENT=/opt/venv
+    command: ["uv", "run", "pytest"]
+
