@@ -41,6 +41,7 @@ The game runs inside a `<canvas>` element (Ruffle/WebAssembly) embedded in the t
 - **Appearance:** Small box-shaped figure, dark/black color
 - **Label:** Green text "Pistol" (or current weapon name) above the player
 - **Position:** Anywhere on the canvas
+- **Movement:** 8 directions — Up, Down, Left, Right, Up-Left, Up-Right, Down-Left, Down-Right (diagonal via two keys held simultaneously)
 - **Detection strategy:** Color segmentation (dark figure) + weapon label text
 
 ### Enemies — Zombies
@@ -59,6 +60,7 @@ The game runs inside a `<canvas>` element (Ruffle/WebAssembly) embedded in the t
 - **Multiplier:** `x3` shown next to score when combo active
 
 ### Weapons
+
 | Weapon | Type |
 |---|---|
 | Pistol | Ranged, always available |
@@ -74,7 +76,7 @@ The game runs inside a `<canvas>` element (Ruffle/WebAssembly) embedded in the t
 
 ### Map — Basic Arena (focus for v1)
 - **Shape:** Square/rectangle, open arena with no obstacles inside
-- **Background:** Beige/sand colored floor
+- **Background:** Beige/sand-colored floor
 - **Spawn points:** Top and bottom edges of the map — enemies enter from there in waves
 - **Multiple maps available** — bot targets basic arena first
 

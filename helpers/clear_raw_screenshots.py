@@ -4,7 +4,7 @@ raw_dir = Path("tests/fixtures/raw")
 count = 0
 
 for file in raw_dir.iterdir():
-    if file.is_file():
+    if file.is_file() and file.suffix == ".png":
         try:
             file.unlink()
             count += 1
