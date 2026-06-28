@@ -10,8 +10,10 @@ jobs:
     steps:
       - name: Extract issue number from branch name
         id: extract
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
         run: |
-          ISSUE_NUM=$(echo "${{ github.ref_name }}" | grep -oE '^[0-9]+')
+          ISSUE_NUM=$(printf '%s' "$BRANCH_NAME" | grep -oE '^[0-9]+')
           echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
 
       - name: Move project item to In Progress
@@ -39,6 +41,11 @@ jobs:
               repo: context.repo.repo,
               issue: issueNumber
             });
+
+            if (!repository.issue) {
+              console.log(`Issue #${issueNumber} not found — skipping`);
+              return;
+            }
 
             const projectId = 'PVT_kwHOBMHU_s4Bb1Xg';
             const item = repository.issue.projectItems.nodes.find(
