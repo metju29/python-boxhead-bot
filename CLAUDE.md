@@ -8,7 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Language: Python 3.11+
 - Environment: uv
 - Browser automation: Playwright (screen capture via page.screenshot(), keyboard/mouse via page.keyboard/page.mouse)
-- Computer vision: OpenCV (opencv-python)
+- Computer vision: OpenCV (opencv-python) + Ultralytics YOLOv11 (entity detection)
+- ML / RL: PyTorch, Stable-Baselines3, Gymnasium
+- Data labeling: Roboflow (external, cloud) — exports dataset in YOLO format
 - Testing: pytest + pytest-mock
 - Linting/formatting: ruff
 
@@ -25,16 +27,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 src/
   boxhead_bot/
     capturer.py       # ScreenCapturer — Playwright page.screenshot() + ROI crop
-    detector.py       # PlayerDetector, EnemyDetector, ObjectDetector
-    decision.py       # DecisionEngine, MovementStrategy, ShootingStrategy
+    detector.py       # YOLODetector — YOLOv11 inference → List[Detection]
+    game_state.py     # GameState dataclass — structured output from detector
+    env.py            # BoxheadEnv — Gymnasium wrapper around Playwright game
     controller.py     # InputController (page.keyboard), MouseController (page.mouse)
-    runner.py         # BotRunner — main game loop
+    runner.py         # BotRunner — runs trained RL policy in game loop
     __main__.py       # CLI entry point
+data/
+  raw/                # collected game screenshots (unlabeled)
+  labeled/            # Roboflow export in YOLO format (images + labels)
+models/
+  yolo/               # trained YOLOv11 weights (.pt files)
+  rl/                 # saved RL policy checkpoints
+training/
+  train_yolo.py       # YOLO training script (Ultralytics API)
+  train_rl.py         # RL training script (Stable-Baselines3 PPO/DQN)
+  evaluate_rl.py      # evaluate trained policy, log metrics
 tests/
   fixtures/           # static screenshots for testing
   test_capturer.py
   test_detector.py
-  test_decision.py
+  test_game_state.py
+  test_env.py
   test_controller.py
 Dockerfile
 docker-compose.yml
@@ -48,21 +62,46 @@ pyproject.toml
 
 ## Architecture Decisions
 - Pipeline architecture: fixed sequence Capture → Detect → Decide → Act per frame
-- Heuristic decision engine (IF/THEN rules) — no ML model in this phase
+- **Detection:** YOLOv11 (Ultralytics) replaces template matching — trained on labeled game screenshots, outputs `List[Detection]` with class, bbox, confidence
+- **Decision:** RL agent (PPO via Stable-Baselines3) replaces IF/THEN heuristics — trained inside `BoxheadEnv` (Gymnasium), loaded as frozen policy at runtime
+- **GameState dataclass** is the contract between Detect and Decide layers — detector fills it, env/policy reads it; neither knows how the other works
 - Playwright replaces PyAutoGUI: headless browser captures game canvas (Ruffle/WebAssembly on `<canvas>`), controls input via page.keyboard/page.mouse — no window focus needed, works in Docker
 - Docker runs the full bot headless (Playwright), not just tests
-- Template matching + color segmentation for entity detection (no ML model needed)
+- Training runs locally or on GPU machine, not in Docker bot container — models are saved to `models/` and loaded at runtime
 - Emergency stop: KeyboardInterrupt + dedicated key combo via page.keyboard
+
+## ML Pipeline
+
+### Phase 1 — Computer Vision (YOLO)
+1. Collect raw screenshots with `helpers/capture_screenshots.py` while playing manually
+2. Upload to Roboflow → label entities: `player`, `enemy`, `weapon`, `health_pack`
+3. Export dataset in YOLOv11 format → `data/labeled/`
+4. Train: `uv run python training/train_yolo.py` → saves weights to `models/yolo/`
+5. Integrate into `detector.py` — `YOLODetector.detect(frame) -> List[Detection]`
+
+### Phase 2 — Reinforcement Learning (PPO)
+1. Implement `BoxheadEnv(gymnasium.Env)` in `env.py`:
+   - `observation_space`: GameState as flat numpy array (positions, counts, distances)
+   - `action_space`: Discrete(8) — 4 movement directions × 2 (shoot / don't shoot)
+   - `reward`: +score_delta (primary — game objective is max score), -death, +survival_tick
+   - `step()`: sends action via InputController, captures frame, runs YOLODetector, returns next obs + reward
+2. Train: `uv run python training/train_rl.py` → saves policy to `models/rl/`
+3. Evaluate: `uv run python training/evaluate_rl.py`
+4. BotRunner loads frozen policy → `policy.predict(obs)` → action → controller
+
+### Phase 3 (optional) — End-to-end from pixels
+- CNN feature extractor + PPO directly on raw game frame (no separate YOLO step)
+- Requires GPU and significantly more training time
 
 ## Development Concept
 - **Primary:** TDD (Test-Driven Development)
 - **Supplementary:** Clean Architecture / Hexagonal
-- **SA note:** TDD fits because each pipeline stage has clear inputs/outputs testable with static fixture screenshots — write the test with a saved game screenshot before implementing the detector. Clean Architecture enforces layer separation (vision / decision / action), so DetectionEngine has no knowledge of InputController and DecisionEngine has no knowledge of OpenCV internals. Together they prevent regression when swapping detection algorithms and allow unit testing each layer in isolation.
+- **SA note:** TDD fits because each pipeline stage has clear inputs/outputs testable with static fixture screenshots — write the test with a saved game screenshot before implementing the detector. Clean Architecture enforces layer separation (vision / decision / action), so `YOLODetector` has no knowledge of `InputController` and the RL policy has no knowledge of OpenCV internals. `GameState` is the stable contract between layers — it can be constructed from real detector output or from a fixture dict in tests, so swapping YOLO for a future model doesn't break decision tests. Training scripts (`training/`) are intentionally outside `src/` — they are one-off tools, not part of the runtime pipeline.
 
 ## Claude Rules
-- DO change: detector logic, heuristic rules in DecisionEngine, logging output, CLI flags, test fixtures
-- ASK before changing: pipeline stage interfaces (method signatures of Capturer/Detector/Decision/Controller), project structure
-- DO NOT change: emergency stop mechanism, public GitHub repo structure once published
+- DO change: YOLO training config, reward function in `BoxheadEnv`, logging output, CLI flags, test fixtures, `GameState` fields
+- ASK before changing: pipeline stage interfaces (method signatures of Capturer/Detector/Env/Controller), `GameState` schema once RL training has started (breaks trained policy), project directory structure
+- DO NOT change: emergency stop mechanism, public GitHub repo structure once published, `models/` directory contents (trained weights)
 
 ## GitHub Setup (production-like workflow)
 
@@ -95,3 +134,8 @@ Runs on every PR to main: `uv sync` → `ruff check` → `ruff format --check` �
 ### Tech stack additions
 - `structlog` — structured JSON logging, configured in `src/logger.py`
 - `pre-commit` — local hook running ruff before every commit
+- `torch` — PyTorch (CPU for inference, GPU for training)
+- `ultralytics` — YOLOv11 training + inference API
+- `stable-baselines3` — PPO/DQN RL algorithms
+- `gymnasium` — standard RL environment interface
+- `numpy` — observation/action arrays
