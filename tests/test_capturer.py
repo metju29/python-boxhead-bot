@@ -5,9 +5,7 @@ import pytest
 
 from boxhead_bot.capturer import ScreenCapturer
 
-FIXTURE_PATH = (
-    Path(__file__).parent / "fixtures" / "raw" / "screenshot_20260628_144112.png"
-)
+FIXTURE_PATH = Path(__file__).parent / "fixtures" / "raw" / "test_screenshot.png"
 
 
 @pytest.fixture
