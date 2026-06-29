@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import cv2
 import numpy as np
 import pytest
 
@@ -40,3 +41,19 @@ def test_capture_raises_on_corrupt_bytes(mocker):
     capturer = ScreenCapturer(page)
     with pytest.raises(ValueError):
         capturer.capture()
+
+
+def test_capture_without_roi_returns_full_frame(mock_page):
+    capturer = ScreenCapturer(mock_page)
+    frame = capturer.capture()
+    buf = np.frombuffer(FIXTURE_PATH.read_bytes(), dtype=np.uint8)
+    original_frame = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+    assert frame.shape == original_frame.shape
+
+
+def test_capture_with_roi_returns_cropped_frame(mock_page):
+    roi = (100, 50, 800, 600)
+    capturer = ScreenCapturer(mock_page, roi)
+    crop_frame = capturer.capture()
+    assert crop_frame.shape[0] == roi[3]
+    assert crop_frame.shape[1] == roi[2]
