@@ -99,8 +99,8 @@ pyproject.toml
 - **SA note:** TDD fits because each pipeline stage has clear inputs/outputs testable with static fixture screenshots — write the test with a saved game screenshot before implementing the detector. Clean Architecture enforces layer separation (vision / decision / action), so `YOLODetector` has no knowledge of `InputController` and the RL policy has no knowledge of OpenCV internals. `GameState` is the stable contract between layers — it can be constructed from real detector output or from a fixture dict in tests, so swapping YOLO for a future model doesn't break decision tests. Training scripts (`training/`) are intentionally outside `src/` — they are one-off tools, not part of the runtime pipeline.
 
 ## Claude Rules
-- DO change: YOLO training config, reward function in `BoxheadEnv`, logging output, CLI flags, test fixtures, `GameState` fields
-- ASK before changing: pipeline stage interfaces (method signatures of Capturer/Detector/Env/Controller), `GameState` schema once RL training has started (breaks trained policy), project directory structure
+- DO change: YOLO training config, reward function in `BoxheadEnv`, logging output, CLI flags, test fixtures, `GameState` fields before RL training starts
+- ASK before changing: pipeline stage interfaces (method signatures of Capturer/Detector/Env/Controller), any `GameState` schema change once RL training has started (breaks trained policy), project directory structure
 - DO NOT change: emergency stop mechanism, public GitHub repo structure once published, `models/` directory contents (trained weights)
 
 ## GitHub Setup (production-like workflow)

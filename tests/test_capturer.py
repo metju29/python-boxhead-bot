@@ -32,3 +32,11 @@ def test_screenshot_captured(mock_page):
     capturer = ScreenCapturer(mock_page)
     capturer.capture()
     mock_page.screenshot.assert_called_once()
+
+
+def test_capture_raises_on_corrupt_bytes(mocker):
+    page = mocker.Mock()
+    page.screenshot.return_value = b""
+    capturer = ScreenCapturer(page)
+    with pytest.raises(ValueError):
+        capturer.capture()
