@@ -1,9 +1,9 @@
 [project]
 name = "boxhead-bot"
-version = "0.1.0"
+version = "0.2.0"
 description = "Automated bot for playing Boxhead using Playwright, YOLOv11 and PPO reinforcement learning"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
     "numpy>=2.0",
     "opencv-python>=4.13.0.92",
@@ -12,7 +12,12 @@ dependencies = [
     "ultralytics>=8.3",
     "stable-baselines3>=2.4",
     "gymnasium>=1.0",
+    "structlog>=25.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
 
 [dependency-groups]
 dev = [
@@ -20,11 +25,10 @@ dev = [
     "pytest>=9.0.3",
     "pytest-mock>=3.15.1",
     "ruff>=0.15.10",
-    "structlog>=25.0",
 ]
 
 [tool.ruff]
-target-version = "py314"
+target-version = "py311"
 line-length = 88
 
 [tool.ruff.lint]
