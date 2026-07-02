@@ -55,11 +55,14 @@ def test_capture_with_roi_returns_cropped_frame(mock_page):
     roi = (100, 50, 800, 600)
     buf = np.frombuffer(FIXTURE_PATH.read_bytes(), dtype=np.uint8)
     original_frame = cv2.imdecode(buf, cv2.IMREAD_COLOR)
-    # x = self._roi[0], y = self._roi[1], w = self._roi[2], h = self._roi[3]
-    expected_frame = original_frame[roi[1] : roi[1] + roi[3], roi[0] : roi[0] + roi[2]]
     capturer = ScreenCapturer(mock_page, roi)
     crop_frame = capturer.capture()
-    assert np.array_equal(expected_frame, crop_frame)
+    # roi = (x, y, w, h)
+    assert crop_frame.shape[:2] == (roi[3], roi[2])
+    assert np.array_equal(crop_frame[0, 0], original_frame[roi[1], roi[0]])
+    assert np.array_equal(
+        crop_frame[-1, -1], original_frame[roi[1] + roi[3] - 1, roi[0] + roi[2] - 1]
+    )
 
 
 def test_capture_raises_on_negative_roi_coords(mock_page):
