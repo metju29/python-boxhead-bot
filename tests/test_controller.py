@@ -138,3 +138,17 @@ def test_pause_presses_p_key(mock_page):
     controller = InputController(mock_page)
     controller.pause()
     mock_page.keyboard.press.assert_called_once_with("p")
+
+
+# Reset tests
+
+
+def test_reset_releases_all_held_keys(mock_page):
+    controller = InputController(mock_page)
+    controller.move(MoveDirection.UP)
+    controller.shoot(True)
+    mock_page.keyboard.reset_mock()
+    controller.reset()
+    mock_page.keyboard.up.assert_any_call("ArrowUp")
+    mock_page.keyboard.up.assert_any_call("Space")
+    assert mock_page.keyboard.up.call_count == 2

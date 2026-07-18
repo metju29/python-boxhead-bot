@@ -63,3 +63,7 @@ class InputController:
 
     def pause(self) -> None:
         self._page.keyboard.press("p")
+
+    def reset(self) -> None:
+        self.move(MoveDirection.STILL)
+        self.shoot(False)
