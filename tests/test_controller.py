@@ -129,3 +129,12 @@ def test_select_weapon_presses_number_key(mock_page, weapon_number):
     controller = InputController(mock_page)
     controller.select_weapon(weapon_number)
     mock_page.keyboard.press.assert_called_once_with(str(weapon_number))
+
+
+# Pause tests
+
+
+def test_pause_presses_p_key(mock_page):
+    controller = InputController(mock_page)
+    controller.pause()
+    mock_page.keyboard.press.assert_called_once_with("p")
