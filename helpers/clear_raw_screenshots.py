@@ -1,6 +1,6 @@
 from pathlib import Path
 
-raw_dir = Path("tests/fixtures/raw")
+raw_dir = Path("data/raw")
 count = 0
 
 for file in raw_dir.iterdir():
