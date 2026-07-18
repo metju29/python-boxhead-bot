@@ -107,3 +107,25 @@ def test_shoot_false_when_nothing_held_does_nothing(mock_page):
     controller.shoot(False)
     mock_page.keyboard.down.assert_not_called()
     mock_page.keyboard.up.assert_not_called()
+
+
+# Weapons change tests
+
+
+def test_next_weapon_presses_dot_key(mock_page):
+    controller = InputController(mock_page)
+    controller.next_weapon()
+    mock_page.keyboard.press.assert_called_once_with(".")
+
+
+def test_prev_weapon_presses_comma_key(mock_page):
+    controller = InputController(mock_page)
+    controller.prev_weapon()
+    mock_page.keyboard.press.assert_called_once_with(",")
+
+
+@pytest.mark.parametrize("weapon_number", range(10))
+def test_select_weapon_presses_number_key(mock_page, weapon_number):
+    controller = InputController(mock_page)
+    controller.select_weapon(weapon_number)
+    mock_page.keyboard.press.assert_called_once_with(str(weapon_number))
