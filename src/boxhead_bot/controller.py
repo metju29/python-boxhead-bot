@@ -60,3 +60,6 @@ class InputController:
 
     def select_weapon(self, weapon_number: int) -> None:
         self._page.keyboard.press(str(weapon_number))
+
+    def pause(self) -> None:
+        self._page.keyboard.press("p")
