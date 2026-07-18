@@ -51,3 +51,12 @@ class InputController:
         else:
             self._page.keyboard.up("Space")
         self._shooting = fire
+
+    def next_weapon(self) -> None:
+        self._page.keyboard.press(".")
+
+    def prev_weapon(self) -> None:
+        self._page.keyboard.press(",")
+
+    def select_weapon(self, weapon_number: int) -> None:
+        self._page.keyboard.press(str(weapon_number))
