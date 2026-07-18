@@ -1,10 +1,10 @@
 from pathlib import Path
 
-raw_dir = Path("tests/fixtures/raw")
+raw_dir = Path("data/raw")
 count = 0
 
 for file in raw_dir.iterdir():
-    if file.is_file() and file.suffix == ".png" and file.name != "test_screenshot.png":
+    if file.is_file() and file.suffix == ".png":
         try:
             file.unlink()
             count += 1

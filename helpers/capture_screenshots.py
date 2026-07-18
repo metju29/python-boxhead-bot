@@ -5,7 +5,7 @@ from pathlib import Path
 from playwright._impl._errors import TargetClosedError
 from playwright.sync_api import sync_playwright
 
-output_dir = Path("tests/fixtures/raw")
+output_dir = Path("data/raw")
 output_dir.mkdir(parents=True, exist_ok=True)
 
 with sync_playwright() as p:
