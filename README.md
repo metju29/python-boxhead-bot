@@ -44,12 +44,12 @@ Manual data-collection scripts, for playing the game while collecting raw screen
 
 ```bash
 uv run python helpers/capture_screenshots.py   # launches a browser, screenshots every 1s while you play; Ctrl+C to stop
-uv run python helpers/clear_raw_screenshots.py # deletes collected screenshots from data/raw/ (keeps test_screenshot.png)
+uv run python helpers/clear_raw_screenshots.py # deletes all collected screenshots from data/raw/
 ```
 
 ## Project Structure
 
-```
+```text
 src/boxhead_bot/
   capturer.py    # ScreenCapturer — Playwright page.screenshot() + ROI crop
   controller.py  # InputController — keyboard-only control via page.keyboard
