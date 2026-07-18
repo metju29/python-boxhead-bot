@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Tech Stack
 - Language: Python 3.11+
 - Environment: uv
-- Browser automation: Playwright (screen capture via page.screenshot(), keyboard/mouse via page.keyboard/page.mouse)
+- Browser automation: Playwright (screen capture via page.screenshot(), keyboard input via page.keyboard — game has no mouse input)
 - Computer vision: OpenCV (opencv-python) + Ultralytics YOLOv11 (entity detection)
 - ML / RL: PyTorch, Stable-Baselines3, Gymnasium
 - Data labeling: Roboflow (external, cloud) — exports dataset in YOLO format
@@ -30,7 +30,7 @@ src/
     detector.py       # YOLODetector — YOLOv11 inference → List[Detection]
     game_state.py     # GameState dataclass — structured output from detector
     env.py            # BoxheadEnv — Gymnasium wrapper around Playwright game
-    controller.py     # InputController (page.keyboard), MouseController (page.mouse)
+    controller.py     # InputController (page.keyboard) — 8-directional movement (arrow-key combos), shoot, weapon switch, pause
     runner.py         # BotRunner — runs trained RL policy in game loop
     __main__.py       # CLI entry point
 data/
@@ -65,7 +65,7 @@ pyproject.toml
 - **Detection:** YOLOv11 (Ultralytics) replaces template matching — trained on labeled game screenshots, outputs `List[Detection]` with class, bbox, confidence
 - **Decision:** RL agent (PPO via Stable-Baselines3) replaces IF/THEN heuristics — trained inside `BoxheadEnv` (Gymnasium), loaded as frozen policy at runtime
 - **GameState dataclass** is the contract between Detect and Decide layers — detector fills it, env/policy reads it; neither knows how the other works
-- Playwright replaces PyAutoGUI: headless browser captures game canvas (Ruffle/WebAssembly on `<canvas>`), controls input via page.keyboard/page.mouse — no window focus needed, works in Docker
+- Playwright replaces PyAutoGUI: headless browser captures game canvas (Ruffle/WebAssembly on `<canvas>`), controls input via page.keyboard (game has no mouse input — aiming is determined by movement direction, not cursor position) — no window focus needed, works in Docker
 - Docker runs the full bot headless (Playwright), not just tests
 - Training runs locally or on GPU machine, not in Docker bot container — models are saved to `models/` and loaded at runtime
 - Emergency stop: KeyboardInterrupt + dedicated key combo via page.keyboard
@@ -82,7 +82,7 @@ pyproject.toml
 ### Phase 2 — Reinforcement Learning (PPO)
 1. Implement `BoxheadEnv(gymnasium.Env)` in `env.py`:
    - `observation_space`: GameState as flat numpy array (positions, counts, distances)
-   - `action_space`: Discrete(8) — 4 movement directions × 2 (shoot / don't shoot)
+   - `action_space`: `MultiDiscrete([9, 2, 13])` — 9 movement states (stand still + 8 directions via arrow-key combinations) × 2 (shoot / don't shoot) × 13 weapon actions (no-op, next, prev, select 0-9). Pause is excluded — not useful for autonomous play.
    - `reward`: +score_delta (primary — game objective is max score), -death, +survival_tick
    - `step()`: sends action via InputController, captures frame, runs YOLODetector, returns next obs + reward
 2. Train: `uv run python training/train_rl.py` → saves policy to `models/rl/`

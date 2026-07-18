@@ -1,6 +1,6 @@
 [project]
 name = "boxhead-bot"
-version = "0.3.0"
+version = "0.4.0"
 description = "Automated bot for playing Boxhead using Playwright, YOLOv11 and PPO reinforcement learning"
 readme = "README.md"
 requires-python = ">=3.11"
