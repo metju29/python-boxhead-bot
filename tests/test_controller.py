@@ -1,14 +1,18 @@
 from unittest.mock import Mock
 
 import pytest
-from boxhead_bot.controller import InputController, MoveDirection
 from pytest_mock import MockerFixture
+
+from boxhead_bot.controller import InputController, MoveDirection
 
 
 @pytest.fixture
 def mock_page(mocker: MockerFixture) -> Mock:
     page = mocker.Mock()
     return page
+
+
+# Move tests
 
 
 def test_construction_does_not_press_any_keys(mock_page):
@@ -69,3 +73,37 @@ def test_move_to_still_releases_all_held_keys(mock_page):
     mock_page.keyboard.up.assert_any_call("ArrowRight")
     assert mock_page.keyboard.up.call_count == 2
     mock_page.keyboard.down.assert_not_called()
+
+
+# Shoot tests
+
+
+def test_shoot_true_presses_space_key(mock_page):
+    controller = InputController(mock_page)
+    controller.shoot(True)
+    mock_page.keyboard.up.assert_not_called()
+    mock_page.keyboard.down.assert_called_once_with("Space")
+
+
+def test_shoot_true_twice_is_idempotent(mock_page):
+    controller = InputController(mock_page)
+    controller.shoot(True)
+    mock_page.keyboard.reset_mock()
+    controller.shoot(True)
+    mock_page.keyboard.up.assert_not_called()
+    mock_page.keyboard.down.assert_not_called()
+
+
+def test_shoot_false_after_true_releases_space_key(mock_page):
+    controller = InputController(mock_page)
+    controller.shoot(True)
+    mock_page.keyboard.reset_mock()
+    controller.shoot(False)
+    mock_page.keyboard.up.assert_called_once_with("Space")
+
+
+def test_shoot_false_when_nothing_held_does_nothing(mock_page):
+    controller = InputController(mock_page)
+    controller.shoot(False)
+    mock_page.keyboard.down.assert_not_called()
+    mock_page.keyboard.up.assert_not_called()
