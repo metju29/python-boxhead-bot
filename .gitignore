@@ -218,3 +218,6 @@ __marimo__/
 .streamlit/secrets.toml
 .DS_Store
 tests/fixtures/raw/*.png
+
+# Collected/labeled game screenshots (managed via Roboflow, not git)
+data/

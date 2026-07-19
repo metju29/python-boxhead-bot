@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Tech Stack
 - Language: Python 3.11+
 - Environment: uv
-- Browser automation: Playwright (screen capture via page.screenshot(), keyboard input via page.keyboard — game has no mouse input)
+- Browser automation: Playwright (screen capture via page.screenshot(), keyboard input via page.keyboard for in-arena gameplay — no mouse aiming, movement direction determines aim). Launch/menu/reset navigation (outer "Play" button, main menu, character/map select, "Retry" after death) is a separate concern that does need `page.mouse` — see `docs/game-analysis.md` → Launch & Reset Sequence.
 - Computer vision: OpenCV (opencv-python) + Ultralytics YOLOv11 (entity detection)
 - ML / RL: PyTorch, Stable-Baselines3, Gymnasium
 - Data labeling: Roboflow (external, cloud) — exports dataset in YOLO format
@@ -65,7 +65,7 @@ pyproject.toml
 - **Detection:** YOLOv11 (Ultralytics) replaces template matching — trained on labeled game screenshots, outputs `List[Detection]` with class, bbox, confidence
 - **Decision:** RL agent (PPO via Stable-Baselines3) replaces IF/THEN heuristics — trained inside `BoxheadEnv` (Gymnasium), loaded as frozen policy at runtime
 - **GameState dataclass** is the contract between Detect and Decide layers — detector fills it, env/policy reads it; neither knows how the other works
-- Playwright replaces PyAutoGUI: headless browser captures game canvas (Ruffle/WebAssembly on `<canvas>`), controls input via page.keyboard (game has no mouse input — aiming is determined by movement direction, not cursor position) — no window focus needed, works in Docker
+- Playwright replaces PyAutoGUI: headless browser captures game canvas (Ruffle/WebAssembly on `<canvas>`), controls in-arena gameplay via page.keyboard (no mouse aiming — aiming is determined by movement direction, not cursor position) — no window focus needed, works in Docker. Launch/menu/reset navigation is a separate, mouse-driven concern (see `docs/game-analysis.md`).
 - Docker runs the full bot headless (Playwright), not just tests
 - Training runs locally or on GPU machine, not in Docker bot container — models are saved to `models/` and loaded at runtime
 - Emergency stop: KeyboardInterrupt + dedicated key combo via page.keyboard
@@ -74,7 +74,7 @@ pyproject.toml
 
 ### Phase 1 — Computer Vision (YOLO)
 1. Collect raw screenshots with `helpers/capture_screenshots.py` while playing manually
-2. Upload to Roboflow → label entities: `player`, `enemy`, `weapon`, `health_pack`
+2. Upload to Roboflow → label 12 classes: `player`, `zombie`, `devil`, `devil_projectile`, `ammo_pack`, `barrel`, `fake_wall`, `mine`, `zombie_dead`, `devil_dead`, `player_dead`, `explosion` (see `docs/game-analysis.md` for appearance/behavior of each — dead entities render lying flat/rotated, distinct from the standing alive pose; `explosion` is a lethal-at-close-range hazard). Floor/wall terrain is *not* a YOLO class — handled separately via OpenCV color segmentation (large flat regions, not discrete objects).
 3. Export dataset in YOLOv11 format → `data/labeled/`
 4. Train: `uv run python training/train_yolo.py` → saves weights to `models/yolo/`
 5. Integrate into `detector.py` — `YOLODetector.detect(frame) -> List[Detection]`
