@@ -1,7 +1,7 @@
-"""Cross-references every raw capture batch (data/raw/<game>/<batch>/images/) against the
-current labeled pool + duplicate archive, by timestamp embedded in the filename, to report
-which batches have already been merged into training and which are still available to use.
-Writes a table to data/raw/BATCH_STATUS.md (data/ is gitignored — local reference only).
+"""Cross-references every raw capture batch against the current labeled pool + duplicate
+archive, by timestamp embedded in the filename, to report which batches have already been
+merged into training and which are still available to use. Writes a table to
+data/raw/BATCH_STATUS.md (data/ is gitignored — local reference only).
 """
 
 import re
@@ -13,34 +13,59 @@ ARCHIVE_DIR = Path("data/labeled/_duplicates_archive")
 OUT_PATH = RAW_DIR / "BATCH_STATUS.md"
 
 # Every naming variant seen (raw captures, curated batches with a microsecond suffix, Roboflow
-# re-exports with a "_png.rf.<id>" suffix) embeds this same "YYYYMMDD_HHMMSS" — match on that
-# instead of pixel hashing, since it's fast, exact, and sessions never overlap in wall-clock time.
-TIMESTAMP_RE = re.compile(r"(\d{8}_\d{6})")
+# re-exports with a "_png.rf.<id>" suffix) embeds a "YYYYMMDD_HHMMSS" — optionally followed by a
+# microsecond suffix on batches captured faster than 1/s (game_4/game_5, dead_player_curated_*).
+# Match on the longest available precision: two screenshots in the same batch can share a second
+# (confirmed on dead_player_curated), so dropping the microsecond suffix would make them
+# indistinguishable and let one merged image mark both as "used".
+TIMESTAMP_RE = re.compile(r"(\d{8}_\d{6}(?:_\d+)?)")
 
 
-def timestamp_keys(images_dir: Path) -> set[str]:
-    keys = set()
+def file_keys(images_dir: Path) -> dict[str, str]:
+    """Maps each image filename to its extracted timestamp key."""
+    keys = {}
     for p in images_dir.glob("*.png"):
         match = TIMESTAMP_RE.search(p.stem)
         if match:
-            keys.add(match.group(1))
+            keys[p.name] = match.group(1)
     return keys
 
 
-def find_batches(raw_dir: Path) -> list[Path]:
-    """A 'batch' is any directory that directly contains an images/ subfolder."""
-    return sorted(p.parent for p in raw_dir.glob("**/images") if p.is_dir())
+def find_batches(raw_dir: Path) -> list[tuple[str, str, Path]]:
+    """Returns (game, batch_label, images_dir) triples. A 'batch' is either a directory with an
+    images/ subfolder, or a directory containing loose *.png files directly — both patterns exist
+    in this project's raw captures (leftover screenshots directly under game_2/, game_3/, and
+    capture_screenshots.py's current flat single-session output)."""
+    batches = []
+    for images_dir in sorted(raw_dir.glob("**/images")):
+        if images_dir.is_dir():
+            batch_dir = images_dir.parent
+            if batch_dir.parent == raw_dir:
+                batches.append((batch_dir.name, "-", images_dir))
+            else:
+                batches.append((batch_dir.parent.name, batch_dir.name, images_dir))
+
+    candidates = [raw_dir, *(d for d in raw_dir.iterdir() if d.is_dir())]
+    for d in sorted(set(candidates), key=lambda p: p.name):
+        if any(d.glob("*.png")):
+            game = d.name if d != raw_dir else "-"
+            batches.append((game, "(loose)", d))
+
+    return batches
 
 
-def write_used_list(batch_dir: Path, reference_keys: set[str]) -> int:
+def batch_root(images_dir: Path) -> Path:
+    """The batch's own directory — one level up for an images/ subfolder, itself for a loose-file batch."""
+    return images_dir.parent if images_dir.name == "images" else images_dir
+
+
+def write_used_list(
+    images_dir: Path, keys_by_file: dict[str, str], reference_keys: set[str]
+) -> int:
     """For a partially-merged batch, list which of its images (by filename) are already used —
     so a future selection pass knows what's left to pick from in that same batch."""
-    used = sorted(
-        p.name
-        for p in (batch_dir / "images").glob("*.png")
-        if (m := TIMESTAMP_RE.search(p.stem)) and m.group(1) in reference_keys
-    )
-    (batch_dir / "used_screenshots.txt").write_text("\n".join(used) + "\n")
+    used = sorted(name for name, key in keys_by_file.items() if key in reference_keys)
+    (batch_root(images_dir) / "used_screenshots.txt").write_text("\n".join(used) + "\n")
     return len(used)
 
 
@@ -62,7 +87,7 @@ def main() -> None:
         POOL_DIR / "valid" / "images",
         ARCHIVE_DIR / "images",
     ):
-        reference_keys |= timestamp_keys(split_dir)
+        reference_keys |= set(file_keys(split_dir).values())
 
     batches = find_batches(RAW_DIR)
 
@@ -79,18 +104,17 @@ def main() -> None:
         "|---|---|---|---|---|---|",
     ]
 
-    for batch_dir in batches:
-        keys = timestamp_keys(batch_dir / "images")
-        matched = len(keys & reference_keys)
-        total = len(keys)
-        has_labels = "yes" if (batch_dir / "labels").exists() else "no"
+    for game, batch_name, images_dir in batches:
+        keys_by_file = file_keys(images_dir)
+        total = len(keys_by_file)
+        matched = sum(1 for k in keys_by_file.values() if k in reference_keys)
+        has_labels = "yes" if (batch_root(images_dir) / "labels").exists() else "no"
         status = classify(matched, total)
         if status == "partially merged":
-            write_used_list(batch_dir, reference_keys)
-        game = batch_dir.parent.name if batch_dir.parent != RAW_DIR else batch_dir.name
-        batch_name = batch_dir.name if batch_dir.parent != RAW_DIR else "-"
+            write_used_list(images_dir, keys_by_file, reference_keys)
+        pct_str = f"{matched / total:.0%}" if total else "n/a"
         lines.append(
-            f"| {game} | {batch_name} | {total} | {has_labels} | {matched} ({matched / total:.0%}) | {status} |"
+            f"| {game} | {batch_name} | {total} | {has_labels} | {matched} ({pct_str}) | {status} |"
         )
 
     OUT_PATH.write_text("\n".join(lines) + "\n")
