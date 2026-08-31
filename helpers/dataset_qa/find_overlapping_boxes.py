@@ -4,7 +4,7 @@ from pathlib import Path
 import cv2
 import yaml
 
-DATA_YAML = Path("data/labeled/v38-pool-1603/data.yaml")
+DATA_YAML = Path("data/labeled/v39-pool-dedupe-fix-1659/data.yaml")
 IOU_THRESHOLD = 0.7  # same-class pairs above this look like duplicate annotations, not two adjacent entities
 REPORT_DIR = Path("reports") / DATA_YAML.parent.name / "overlapping_boxes"
 
@@ -48,17 +48,19 @@ def save_preview(
     img = cv2.imread(str(img_path))
     h, w = img.shape[:2]
 
-    for i, line in enumerate(label_path.read_text().splitlines()):
+    instance_idx = 0
+    for line in label_path.read_text().splitlines():
         if not line.strip():
             continue
         cls, xc, yc, bw, bh = line.split()
         xc, yc, bw, bh = float(xc), float(yc), float(bw), float(bh)
         x1, y1 = int((xc - bw / 2) * w), int((yc - bh / 2) * h)
         x2, y2 = int((xc + bw / 2) * w), int((yc + bh / 2) * h)
-        is_flagged = i in flagged_idx
+        is_flagged = instance_idx in flagged_idx
         color = (0, 0, 255) if is_flagged else (0, 255, 0)
         thickness = 3 if is_flagged else 1
         cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
+        instance_idx += 1
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(out_path), img)

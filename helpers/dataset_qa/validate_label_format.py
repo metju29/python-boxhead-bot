@@ -2,7 +2,7 @@ from pathlib import Path
 
 import yaml
 
-DATA_YAML = Path("data/labeled/v38-pool-1603/data.yaml")
+DATA_YAML = Path("data/labeled/v39-pool-dedupe-fix-1659/data.yaml")
 REPORT_DIR = Path("reports") / DATA_YAML.parent.name / "label_format_violations"
 
 
@@ -46,7 +46,9 @@ def main() -> None:
         if not labels_dir.exists():
             continue
         for label_file in sorted(labels_dir.glob("*.txt")):
-            for line_idx, line in enumerate(label_file.read_text().splitlines()):
+            for line_idx, line in enumerate(
+                label_file.read_text().splitlines(), start=1
+            ):
                 if not line.strip():
                     continue
                 total_lines += 1

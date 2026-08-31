@@ -10,12 +10,13 @@ or misclassified detections.
 """
 
 import math
+import shutil
 from pathlib import Path
 
 import cv2
 import yaml
 
-DATA_YAML = Path("data/labeled/v38-pool-1603/data.yaml")
+DATA_YAML = Path("data/labeled/v39-pool-dedupe-fix-1659/data.yaml")
 CLASS_NAME = "shrapnel"
 CONTEXT_RATIO = 3.0  # crop side = max(box_w_px, box_h_px) * this, so the box occupies ~1/3 of the crop
 THUMB_SIZE = 200  # px, square
@@ -127,9 +128,10 @@ def main() -> None:
     for split, stem, _line_idx, xc, yc, bw, bh in instances:
         boxes_by_image.setdefault((split, stem), []).append((xc, yc, bw, bh))
 
-    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    if REPORT_DIR.exists():
+        shutil.rmtree(REPORT_DIR)
     previews_dir = REPORT_DIR / "previews"
-    previews_dir.mkdir(exist_ok=True)
+    previews_dir.mkdir(parents=True)
 
     thumbs = []
     report_lines = [

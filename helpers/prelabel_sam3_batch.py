@@ -7,7 +7,7 @@ from ultralytics.models.sam import SAM3SemanticPredictor
 
 BATCH_DIRS = [Path("data/raw/game_1/train")]
 CHECKPOINT = "data/sam3.pt"
-CLASSES_YAML = Path("data/labeled/v22-pool-1301/data.yaml")
+CLASSES_YAML = Path("data/labeled/v39-pool-dedupe-fix-1659/data.yaml")
 CONF_THRESHOLD = 0.25
 IMG_SIZE = 1024
 DEVICE = "mps"

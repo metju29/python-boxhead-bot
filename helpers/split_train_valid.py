@@ -4,8 +4,8 @@ from pathlib import Path
 
 import cv2
 
-TRAIN_DIR = Path("data/labeled/v38-pool-1603/train")
-VALID_DIR = Path("data/labeled/v38-pool-1603/valid")
+TRAIN_DIR = Path("data/labeled/v39-pool-dedupe-fix-1659/train")
+VALID_DIR = Path("data/labeled/v39-pool-dedupe-fix-1659/valid")
 # Classes still below the ~25-30 images-with-class threshold (see
 # project_rare_class_split_threshold memory) are kept 100% in train so the
 # already-scarce signal isn't split away. All classes have now crossed that
@@ -50,6 +50,13 @@ def find_duplicate_stems(images_dir: Path) -> set[str]:
                 duplicates.add(stems[j])
     return duplicates
 
+
+if (VALID_DIR / "images").exists() and any((VALID_DIR / "images").iterdir()):
+    raise SystemExit(
+        f"{VALID_DIR}/images already contains files — this script isn't idempotent, "
+        "re-running would draw an additional VALID_FRACTION on top of the existing split. "
+        "Move the existing valid images/labels back into train (or reset from a fresh merge) first."
+    )
 
 normal_stems = list()
 rare_stems = list()

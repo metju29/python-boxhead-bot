@@ -60,7 +60,7 @@ requires-dist = [
     { name = "structlog", specifier = ">=25.0" },
     { name = "timm", specifier = ">=1.0.28" },
     { name = "torch", specifier = ">=2.5" },
-    { name = "ultralytics", specifier = ">=8.3" },
+    { name = "ultralytics", specifier = ">=8.3.237" },
 ]
 
 [package.metadata.requires-dev]

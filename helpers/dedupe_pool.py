@@ -7,14 +7,13 @@ import cv2
 # Run this BEFORE split_train_valid.py, on the flat (pre-split) pool — same TRAIN_DIR convention.
 # Keeps exactly one representative per near-duplicate cluster in the active pool (picked at random,
 # not always the earliest — a burst's first frame isn't inherently better than the rest) and moves
-# the rest to ARCHIVE_DIR instead of deleting them, so dataset
-# stats (images-with-class counts) reflect real unique content — see project_game_mechanics_weapons-
-# adjacent discussion: a single player_dead death produced bursts of 2-7 near-identical frames (corpse
-# lingers on screen for seconds at 1 FPS), which inflated raw counts without adding real signal and
-# made it impossible to tell how much unique data existed without this pass. split_train_valid.py's
-# own duplicate-cluster exclusion stays in place as a safety net for anything that slips through, but
-# after this step it should normally find nothing to exclude.
-TRAIN_DIR = Path("data/labeled/v38-pool-1603/train")
+# the rest to ARCHIVE_DIR instead of deleting them, so dataset stats (images-with-class counts)
+# reflect real unique content — a single player_dead death produced bursts of 2-7 near-identical
+# frames (corpse lingers on screen for seconds at 1 FPS), which inflated raw counts without adding
+# real signal and made it impossible to tell how much unique data existed without this pass.
+# split_train_valid.py's own duplicate-cluster exclusion stays in place as a safety net for anything
+# that slips through, but after this step it should normally find nothing to exclude.
+TRAIN_DIR = Path("data/labeled/v39-pool-dedupe-fix-1659/train")
 ARCHIVE_DIR = Path("data/labeled/_duplicates_archive")
 HASH_SIZE = 8
 HAMMING_THRESHOLD = 3
@@ -36,29 +35,30 @@ def hamming(a: int, b: int) -> int:
 
 
 def find_clusters(hashes: dict[str, int]) -> list[list[str]]:
-    stems = list(hashes)
-    parent = {s: s for s in stems}
-
-    def find(x: str) -> str:
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
-
-    def union(a: str, b: str) -> None:
-        ra, rb = find(a), find(b)
-        if ra != rb:
-            parent[ra] = rb
-
-    for i in range(len(stems)):
-        for j in range(i + 1, len(stems)):
-            if hamming(hashes[stems[i]], hashes[stems[j]]) <= HAMMING_THRESHOLD:
-                union(stems[i], stems[j])
-
-    clusters: dict[str, list[str]] = {}
-    for s in stems:
-        clusters.setdefault(find(s), []).append(s)
-    return list(clusters.values())
+    """Complete-linkage grouping: every member of a cluster is within HAMMING_THRESHOLD of
+    every other member, not just transitively chained (A~B~C doesn't imply A~C). A stem that
+    doesn't fit any candidate group stays a singleton rather than getting merged into one it
+    isn't actually close to — under-merging is the safe direction here, over-merging risks
+    discarding unique images."""
+    remaining = set(hashes)
+    clusters: list[list[str]] = []
+    for seed in sorted(hashes):
+        if seed not in remaining:
+            continue
+        group = [seed]
+        remaining.discard(seed)
+        grew = True
+        while grew:
+            grew = False
+            for stem in sorted(remaining):
+                if all(
+                    hamming(hashes[stem], hashes[m]) <= HAMMING_THRESHOLD for m in group
+                ):
+                    group.append(stem)
+                    remaining.discard(stem)
+                    grew = True
+        clusters.append(group)
+    return clusters
 
 
 def archive_stem(images_dir: Path, labels_dir: Path, stem: str) -> None:

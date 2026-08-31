@@ -51,7 +51,11 @@ while i < len(todo):
             last_fname = last.rsplit(",", 1)[0]
             del reviewed[last_fname]
             LOG_FILE.write_text("\n".join(log_lines) + ("\n" if log_lines else ""))
-            i -= 1
+            # Rebuild todo (the undone image may have been reviewed in a *previous* run, so it
+            # was never in this session's todo list) and find where it landed, rather than just
+            # decrementing i — that can go negative and wrap to the end via Python indexing.
+            todo = [p for p in image_paths if p.name not in reviewed]
+            i = next((idx for idx, p in enumerate(todo) if p.name == last_fname), 0)
             print(f"undid {last_fname}")
         continue
     elif key == QUIT_KEY:

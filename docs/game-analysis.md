@@ -55,7 +55,7 @@ The project's "no mouse input" framing (see `CLAUDE.md`) applies to **in-arena g
 
 The game runs inside a `<canvas>` element (Ruffle/WebAssembly) embedded in the twoplayergames.org page. The canvas is surrounded by browser chrome (navbar, ads).
 
-**Canvas position on page:** centered, approximately `515x415px` starting at ~`(460, 160)` (may vary by screen resolution). Cross-check against the confirmed native stage size (640×480px, see [Overview](#overview)) if recalibrating — the two numbers won't match directly since the embed scales the native stage for display, but they should be internally consistent (same aspect ratio).
+**Canvas position on page:** centered, approximately `515x415px` starting at ~`(460, 160)` (may vary by screen resolution) — this is an early, coarse measurement that pre-dates the confirmed native stage size, and its aspect ratio (~1.24) doesn't match the native 640×480 stage (~1.33), so it likely includes a border/letterboxing or was measured loosely. Treat as an approximate starting point only, not exact — re-measure precisely (preserving the 4:3 aspect ratio, see [Overview](#overview)) before relying on it for ROI cropping.
 
 **What the bot sees:** full browser screenshot — canvas must be cropped via ROI. On a Retina display (`devicePixelRatio` 2), Playwright's `page.screenshot()` renders/encodes at native pixel resolution before any cropping happens — a full-window screenshot is 4x the pixel count of the logical window size. Cropping via Playwright's own `clip` parameter (coordinates in CSS pixels, i.e. native ROI ÷ `devicePixelRatio`) instead of capturing full-window and cropping after decoding cuts capture latency roughly in half — see `helpers/capture_screenshots.py`.
 
@@ -136,10 +136,10 @@ New weapons are **not** floor pickups — they unlock automatically at score/tim
 ### Chargepack (Placed)
 - **Appearance:** small reddish sprite with a light/white marking, distinct from `grenade`'s plain black sphere
 - **Confirmed placed-and-persists, not thrown (decompiled source, 2026-08-26):** `CThing_Object_ChargePack` is a placed map object with the same `Process_Init → Process_Normal → Process_Detonate` lifecycle as Mine/Fake Wall — not a charge-and-release projectile like Grenade. Resolves the earlier open question.
-- **Place/detonate mechanic:** `Space` toggles — first press places one (only if the target cell isn't already crowded), second press detonates **every** chargepack the player has placed at once, not just the most recent one. A short ~5-frame (0.1s @ 50fps) fuse delay separates trigger from the actual explosion. Placing more than one before detonating is possible by switching weapon away and back between placements (as long as ammo remains) — see [[project_game_mechanics_weapons]] memory for the exact mechanism, relevant if capturing varied multi-chargepack training screenshots.
+- **Place/detonate mechanic:** `Space` toggles — first press places one (only if the target cell isn't already crowded), second press detonates **every** chargepack the player has placed at once, not just the most recent one. A short ~5-frame (0.1s @ 50fps) fuse delay separates trigger from the actual explosion. Placing more than one before detonating is possible by switching weapon away and back between placements (as long as ammo remains) — relevant if capturing varied multi-chargepack training screenshots.
 - **Damage/explosion:** default damage 100, spawns the same source-agnostic `CThing_Effect_Explosion` as other explosives (see [Explosions](#explosions)) — Cluster Explode/Big Bang upgrade multipliers carry through into that explosion, same as other weapons in that upgrade category.
 - **HUD:** equipped weapon shows as `Charges:N` (not `Chargepack:N`) — same naming mismatch pattern as `Claymore`/`Mines` (see [Weapons](#weapons))
-- **Detection:** YOLO label `chargepack` — new class (2026-08-25), not yet trained (only 3 manual screenshots existed before `game_4`)
+- **Detection:** YOLO label `chargepack` — added 2026-08-25 (only 3 manual screenshots existed before `game_4`); trained as of `boxhead_yolo11s_960_v2` on `v38-pool-1603` (205 images / 215 instances, P=0.978, R=0.909, mAP50=0.987, mAP50-95=0.910)
 
 ### Upgrades
 
@@ -202,7 +202,7 @@ Alternative detection path: an on-screen toast briefly names the upgrade when pi
 | `game_explosion.png` | Barrel/mine explosion in progress | YOLODetector (`explosion`) |
 | `game_grenade.png` | Thrown grenade mid-flight | YOLODetector (`grenade`) |
 | `game_shrapnel.png` | Cluster Explode shrapnel burst | YOLODetector (`shrapnel`) |
-| `game_chargepack.png` | Chargepack in flight/placed | YOLODetector (`chargepack`) |
+| `game_chargepack.png` | Chargepack placed (pre-detonation) | YOLODetector (`chargepack`) |
 | `game_menu.png` | Main menu screen | State detection |
 | `game_canvas_crop.png` | Cropped canvas only (no browser chrome) | ROI calibration |
 
