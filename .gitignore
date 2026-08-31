@@ -221,3 +221,12 @@ tests/fixtures/raw/*.png
 
 # Collected/labeled game screenshots (managed via Roboflow, not git)
 data/
+
+# Pretrained base checkpoints (downloaded from Ultralytics, not our work)
+models/yolo/pretrained/
+
+# QA tooling output (label outlier reports, etc.) — generated, not source data
+reports/
+
+# Ultralytics training run output (curves, confusion matrices, duplicate weight checkpoints)
+runs/
