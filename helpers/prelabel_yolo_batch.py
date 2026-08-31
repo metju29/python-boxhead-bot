@@ -6,7 +6,7 @@ import yaml
 from ultralytics import YOLO
 
 BATCH_DIRS = [Path("data/raw/dead_player_curated_5")]
-MODEL_PATH = "models/yolo/boxhead_yolo11s_960_v2/boxhead_yolo11s_960_v2.pt"
+MODEL_PATH = "models/yolo/boxhead_yolo11s_960_v3/boxhead_yolo11s_960_v3.pt"
 CLASSES_YAML = Path("data/labeled/v39-pool-dedupe-fix-1659/data.yaml")
 CONF_THRESHOLD = 0.25
 DEVICE = "mps"

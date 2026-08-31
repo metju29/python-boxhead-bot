@@ -154,19 +154,29 @@ def write_model_card(
         f"- mAP50-95: {metrics.results_dict['metrics/mAP50-95(B)']:.3f}",
         confusion_line,
         "",
-        "## Per-class dataset stats + validation metrics",
+        "## Dataset",
         "",
-        "| class | images | instances | P | R | mAP50 | mAP50-95 |",
-        "|---|---|---|---|---|---|---|",
+        "| class | images | instances |",
+        "|---|---|---|",
     ]
     for cls_id, name in enumerate(names):
         n_images, n_instances = stats[cls_id]
+        lines.append(f"| {name} | {n_images} | {n_instances} |")
+
+    lines += [
+        "",
+        "## Per-class validation metrics",
+        "",
+        "| class | P | R | mAP50 | mAP50-95 |",
+        "|---|---|---|---|---|",
+    ]
+    for cls_id, name in enumerate(names):
         if cls_id in metric_by_class:
             p, r, ap50, ap = metric_by_class[cls_id]
             metrics_str = f"{p:.3f} | {r:.3f} | {ap50:.3f} | {ap:.3f}"
         else:
             metrics_str = "- | - | - | -"
-        lines.append(f"| {name} | {n_images} | {n_instances} | {metrics_str} |")
+        lines.append(f"| {name} | {metrics_str} |")
 
     lines += ["", KNOWN_LIMITATIONS_HEADER, ""]
     preserved = existing_known_limitations(card_path)
