@@ -5,7 +5,7 @@ from pathlib import Path
 
 import cv2
 
-DATA_YAML = Path("data/labeled/v38-pool-1603/data.yaml")
+DATA_YAML = Path("data/labeled/v39-pool-dedupe-fix-1659/data.yaml")
 HASH_SIZE = 8
 HAMMING_THRESHOLD = 3  # dHash bits (of HASH_SIZE * (HASH_SIZE - 1)) that may differ to flag as near-duplicate
 REPORT_DIR = Path("reports") / DATA_YAML.parent.name / "train_valid_duplicates"

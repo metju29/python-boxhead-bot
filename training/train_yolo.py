@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 from ultralytics import YOLO
 
-DATA_PATH = "data/labeled/v38-pool-1603/data.yaml"
+DATA_PATH = "data/labeled/v39-pool-dedupe-fix-1659/data.yaml"
 BASE_MODEL = "models/yolo/pretrained/yolo11s.pt"
 IMG_SIZE = 960
 BATCH_SIZE = 4  # imgsz=960 needs this reduced to avoid OOM on M4 Pro; 640 can use 16

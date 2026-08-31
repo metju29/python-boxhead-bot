@@ -4,7 +4,7 @@ from pathlib import Path
 import cv2
 import yaml
 
-DATA_YAML = Path("data/labeled/v38-pool-1603/data.yaml")
+DATA_YAML = Path("data/labeled/v39-pool-dedupe-fix-1659/data.yaml")
 # Classes that must never co-occur in the same frame. There is exactly one
 # player, so it can't be alive and dead at once. devil/devil_dead and
 # zombie/zombie_dead are deliberately NOT listed here: multiple enemies can be

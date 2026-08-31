@@ -4,7 +4,7 @@ from pathlib import Path
 import cv2
 import yaml
 
-DATA_YAML = Path("data/labeled/v38-pool-1603/data.yaml")
+DATA_YAML = Path("data/labeled/v39-pool-dedupe-fix-1659/data.yaml")
 MEDIAN_RATIO = 5.0  # flag instances whose area is >Nx (or <1/Nx if FLAG_TOO_SMALL) the class median
 MIN_INSTANCES = 10  # classes with fewer instances than this don't have a meaningful size distribution
 # "Too small" is dominated by legitimate edge-of-screen truncation (a zombie half off-camera
