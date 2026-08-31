@@ -37,7 +37,7 @@ data/
   raw/                # collected game screenshots (unlabeled)
   labeled/            # Roboflow export in YOLO format (images + labels)
 models/
-  yolo/               # trained YOLOv11 weights (.pt files)
+  yolo/               # one subfolder per trained version (e.g. boxhead_yolo11s_960_v2/), each holding its .pt weights, .md model card, and copied diagnostic plots
   rl/                 # saved RL policy checkpoints
 training/
   train_yolo.py       # YOLO training script (Ultralytics API)
@@ -74,7 +74,7 @@ pyproject.toml
 
 ### Phase 1 — Computer Vision (YOLO)
 1. Collect raw screenshots with `helpers/capture_screenshots.py` while playing manually
-2. Upload to Roboflow → label 12 classes: `player`, `zombie`, `devil`, `devil_projectile`, `ammo_pack`, `barrel`, `fake_wall`, `mine`, `zombie_dead`, `devil_dead`, `player_dead`, `explosion` (see `docs/game-analysis.md` for appearance/behavior of each — dead entities render lying flat/rotated, distinct from the standing alive pose; `explosion` is a lethal-at-close-range hazard). Floor/wall terrain is *not* a YOLO class — handled separately via OpenCV color segmentation (large flat regions, not discrete objects).
+2. Upload to Roboflow → label 15 classes: `player`, `zombie`, `devil`, `devil_projectile`, `grenade`, `shrapnel`, `chargepack`, `ammo_pack`, `barrel`, `fake_wall`, `mine`, `zombie_dead`, `devil_dead`, `player_dead`, `explosion` (see `docs/game-analysis.md` for appearance/behavior of each — dead entities render lying flat/rotated, distinct from the standing alive pose; `explosion` is a lethal-at-close-range hazard; `grenade` tracks the player's thrown projectile before it becomes an `explosion`; `shrapnel` is the source-agnostic Cluster Explode fragment burst (grenade/mine/chargepack), split out from `grenade` after the two were found mixed under one label; `fake_wall` instances placed adjacently still get individual bounding boxes). Floor/wall terrain is *not* a YOLO class — handled separately via OpenCV color segmentation (large flat regions, not discrete objects).
 3. Export dataset in YOLOv11 format → `data/labeled/`
 4. Train: `uv run python training/train_yolo.py` → saves weights to `models/yolo/`
 5. Integrate into `detector.py` — `YOLODetector.detect(frame) -> List[Detection]`
