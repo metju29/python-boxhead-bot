@@ -13,6 +13,9 @@ dependencies = [
     "stable-baselines3>=2.4",
     "gymnasium>=1.0",
     "structlog>=25.0",
+    "huggingface-hub>=1.26.0",
+    "clip",
+    "timm>=1.0.28",
 ]
 
 [tool.pytest.ini_options]
@@ -41,3 +44,6 @@ ignore = ["E501"]
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.uv.sources]
+clip = { git = "https://github.com/ultralytics/CLIP.git" }
