@@ -117,7 +117,7 @@ pyproject.toml
 4. Code + commit (Conventional Commits)
 5. `git push origin branch-name`
 6. Open PR → `closes #issue_number` in description
-7. Wait for CodeRabbit review
+7. Trigger CodeRabbit review — comment `@coderabbitai review` on the PR (`gh pr comment --body "@coderabbitai review"`); automatic reviews are skipped for repos with <10 stars. Then wait for the review.
 8. Review diff → merge
 
 ### Required files (already created or to be created)
