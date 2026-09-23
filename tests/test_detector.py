@@ -51,3 +51,10 @@ def test_detect_returns_detection_for_single_object(
     assert detections == [
         Detection(class_name="zombie", bbox=(10.0, 20.0, 50.0, 80.0), confidence=0.75)
     ]
+
+
+def test_init_loads_model_from_weights_path(mock_yolo_cls: Mock) -> None:
+    weights_path = Path("weights/model.pt")
+    YOLODetector(weights_path)
+
+    mock_yolo_cls.assert_called_once_with(weights_path)
