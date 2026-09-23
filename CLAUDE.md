@@ -120,6 +120,8 @@ pyproject.toml
 7. Trigger CodeRabbit review — comment `@coderabbitai review` on the PR (`gh pr comment --body "@coderabbitai review"`); automatic reviews are skipped for repos with <10 stars. Then wait for the review.
 8. Review diff → merge
 
+Exception: trivial docs/config changes (typos, small `CLAUDE.md`/README updates) may skip the Issue — create a branch manually (`git checkout -b docs/short-name`) and open a PR without `closes #`. A PR is still required (branch protection on `main`).
+
 ### Required files (already created or to be created)
 - `.github/workflows/ci.yml` — runs ruff + pytest on every PR to main
 - `.github/dependabot.yml` — weekly dependency updates via PR
